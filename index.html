@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>헬로방방 부천점 — 매출 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#085041;--primary-light:#E1F5EE;--primary-mid:#1D9E75;
+  --green:#3B6D11;--green-light:#EAF3DE;--green-mid:#639922;
+  --amber:#854F0B;--amber-light:#FAEEDA;--amber-mid:#BA7517;
+  --red:#A32D2D;--red-light:#FCEBEB;--red-mid:#E24B4A;
+  --bg:#F4F6F9;--card:#fff;--border:rgba(0,0,0,0.08);
+  --text:#1a1a1a;--muted:#6B7280;--gray-bg:#F8F9FA;--gray-line:#F1EFE8;
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.topbar{background:var(--primary);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-size:17px;font-weight:700;}
+.topbar-sub{font-size:11px;opacity:.7;margin-top:2px;}
+.sync-status{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.15);}
+.sync-ok{background:rgba(99,153,34,0.4);}
+.sync-err{background:rgba(226,75,74,0.4);}
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);padding:0 16px;overflow-x:auto;}
+.tab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.page{display:none;}.page.active{display:block;}
+.container{max-width:960px;margin:0 auto;padding:18px 14px;}
+.sec{margin-bottom:18px;}
+.sec-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
+@media(max-width:600px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:12px;color:var(--muted);font-weight:500;}
+.field input,.field select{font-size:14px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--gray-bg);color:var(--text);outline:none;font-family:inherit;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--primary-mid);background:#fff;}
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.metric{background:var(--gray-bg);border-radius:var(--radius-sm);padding:11px 13px;}
+.metric .ml{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:3px;}
+.metric .mv{font-size:19px;font-weight:700;color:var(--text);line-height:1.1;}
+.metric .ms{font-size:11px;margin-top:3px;}
+.prog-wrap{background:var(--gray-line);border-radius:8px;height:10px;overflow:hidden;margin:6px 0;}
+.prog-bar{height:100%;border-radius:8px;transition:width .4s ease;}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:3px;}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+th{font-size:11px;font-weight:700;color:var(--muted);padding:7px 8px;border-bottom:2px solid var(--border);text-align:left;background:var(--gray-bg);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--gray-bg);}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.bd{background:var(--red-light);color:var(--red);}
+.bw{background:var(--amber-light);color:var(--amber);}
+.bs{background:var(--green-light);color:var(--green);}
+.alert{border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;line-height:1.6;margin-bottom:7px;display:flex;gap:9px;align-items:flex-start;}
+.ad{background:var(--red-light);border-left:3px solid var(--red-mid);border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
+.aw{background:var(--amber-light);border-left:3px solid var(--amber-mid);border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
+.as{background:var(--green-light);border-left:3px solid var(--green-mid);border-radius:0 var(--radius-sm) var(--radius-sm) 0;}
+.placeholder{color:var(--muted);font-size:13px;text-align:center;padding:18px;}
+.prog-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.big-rate{font-weight:700;font-size:20px;}
+.msg-box{background:var(--gray-bg);border-radius:var(--radius-sm);padding:13px 15px;font-size:13px;line-height:1.9;color:var(--text);white-space:pre-wrap;word-break:break-all;border:1px solid var(--border);}
+.copy-btn{margin-top:8px;width:100%;font-size:14px;padding:9px;border-radius:var(--radius-sm);border:none;background:var(--primary);color:#fff;cursor:pointer;font-family:inherit;font-weight:500;transition:opacity .2s;}
+.copy-btn:hover{opacity:.85;}
+.add-btn{font-size:13px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--primary-mid);background:var(--primary-light);color:var(--primary);cursor:pointer;font-family:inherit;font-weight:500;}
+.add-btn:hover{background:var(--primary-mid);color:#fff;}
+.add-btn:disabled{opacity:.5;cursor:not-allowed;}
+.del-btn{font-size:11px;padding:3px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;}
+.del-btn:hover{background:var(--red-light);color:var(--red);border-color:var(--red-mid);}
+.mini-prog{background:var(--gray-line);border-radius:4px;height:5px;overflow:hidden;margin-top:3px;}
+.mini-bar{height:100%;border-radius:4px;}
+.highlight-card{background:var(--primary-light);border:1px solid rgba(55,138,221,0.2);border-radius:var(--radius);padding:13px 16px;margin-bottom:12px;}
+.reset-btn{font-size:11px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--primary-mid);background:transparent;color:var(--primary);cursor:pointer;font-family:inherit;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">헬로방방 부천점</div>
+    <div class="topbar-sub">매출 대시보드 · 구글 시트 연동</div>
+  </div>
+  <div class="sync-status" id="sync-status">연결 중...</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('daily')">일일 보고</div>
+  <div class="tab" onclick="switchTab('record')">일자별 기록</div>
+  <div class="tab" onclick="switchTab('monthly')">월 목표 관리</div>
+</div>
+
+<!-- 일일 보고 -->
+<div class="page active" id="page-daily">
+<div class="container">
+  <div class="sec">
+    <div class="sec-label">오늘 매출 입력</div>
+    <div class="card">
+      <div class="g3" style="margin-bottom:10px;">
+        <div class="field"><label>보고 날짜</label><input type="date" id="d-date"/></div>
+        <div class="field"><label>요일 구분</label><select id="d-daytype"><option>평일</option><option>주말/공휴일</option></select></div>
+        <div class="field"><label>담당자</label><input type="text" id="d-staff" placeholder="이름 입력"/></div>
+      </div>
+      <div class="divider"></div>
+      <div class="g4" style="margin-bottom:10px;">
+        <div class="field"><label>일 매출 (원)</label><input type="number" id="d-sales" placeholder="0" oninput="dailyCalc()"/></div>
+        <div class="field"><label>입금 금액 (원)</label><input type="number" id="d-deposit" placeholder="0" oninput="dailyCalc()"/></div>
+        <div class="field"><label>실현금 (원)</label><input type="number" id="d-cash" placeholder="0" oninput="dailyCalc()"/></div>
+        <div class="field"><label>쿠폰 장수</label><input type="number" id="d-coupon" placeholder="0" oninput="dailyCalc()"/></div>
+      </div>
+      <div class="g2" style="margin-bottom:10px;">
+        <div class="field"><label>이벤트 매출 (원)</label><input type="number" id="d-event" placeholder="0" oninput="dailyCalc()"/></div>
+        <div class="field"><label>어린이집 매출 (원)</label><input type="number" id="d-kinder" placeholder="0" oninput="dailyCalc()"/></div>
+      </div>
+      <div class="divider"></div>
+      <div class="field"><label>특이사항</label><input type="text" id="d-memo" placeholder="예: 단체방문, 우천"/></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="add-btn" id="save-btn" onclick="addRecord()">+ 구글 시트에 저장</button>
+      <span id="save-msg" style="font-size:12px;"></span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">오늘 요약</div>
+    <div class="g4">
+      <div class="metric"><div class="ml">일 매출</div><div class="mv" id="ds-sales">0원</div></div>
+      <div class="metric"><div class="ml">입금 금액</div><div class="mv" id="ds-deposit">0원</div></div>
+      <div class="metric"><div class="ml">이벤트 비중</div><div class="mv" id="ds-eratio">0%</div></div>
+      <div class="metric"><div class="ml">쿠폰 사용</div><div class="mv" id="ds-coupon">0장</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">월 진도율 (누적 기준)</div>
+    <div id="d-monthly-summary"><div class="placeholder">일자별 기록에 데이터가 쌓이면 자동으로 표시됩니다.</div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">카카오톡 보고 메시지</div>
+    <div class="msg-box" id="d-msg">숫자를 입력하면 메시지가 자동 생성됩니다.</div>
+    <button class="copy-btn" onclick="copyMsg()">메시지 복사하기</button>
+  </div>
+</div>
+</div>
+
+<!-- 일자별 기록 -->
+<div class="page" id="page-record">
+<div class="container">
+  <div class="sec">
+    <div class="sec-label">월간 요약</div>
+    <div id="r-summary"><div class="placeholder">데이터를 불러오는 중...</div></div>
+  </div>
+  <div class="sec">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="sec-label" style="margin-bottom:0;">일자별 매출 기록표</div>
+      <button class="reset-btn" onclick="loadRecords()">새로고침</button>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:10%;">날짜</th>
+            <th style="width:7%;">구분</th>
+            <th style="width:13%;">일 매출</th>
+            <th style="width:12%;">입금</th>
+            <th style="width:11%;">실현금</th>
+            <th style="width:10%;">이벤트</th>
+            <th style="width:7%;">쿠폰</th>
+            <th style="width:12%;">목표대비</th>
+            <th style="width:10%;">누적달성률</th>
+            <th style="width:8%;">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="r-tbody">
+          <tr><td colspan="10" class="placeholder">데이터를 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 월 목표 관리 -->
+<div class="page" id="page-monthly">
+<div class="container">
+  <div class="sec">
+    <div class="sec-label">월 목표 설정 <span style="font-size:10px;color:var(--green);font-weight:400;">자동 저장</span></div>
+    <div class="card">
+      <div class="g3">
+        <div class="field"><label>기준 월</label><select id="m-month"></select></div>
+        <div class="field"><label>월 목표 매출 (원)</label><input type="number" id="m-goal" placeholder="예: 30000000" oninput="saveGoal();monthlyCalc()"/></div>
+        <div class="field"><label>총 영업일 수</label><input type="number" id="m-bizdays" placeholder="예: 26" oninput="saveGoal();monthlyCalc()"/></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);padding:8px 10px;background:var(--gray-bg);border-radius:var(--radius-sm);">
+        누적 매출은 구글 시트 데이터에서 자동 연동됩니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">진도율 현황</div>
+    <div class="g4" style="margin-bottom:10px;">
+      <div class="metric"><div class="ml">목표 진도율</div><div class="mv" id="m-trate">—</div><div class="ms" style="color:var(--muted);">영업일 기준</div></div>
+      <div class="metric"><div class="ml">실제 달성률</div><div class="mv" id="m-arate">—</div><div class="ms" id="m-gap"></div></div>
+      <div class="metric"><div class="ml">잔여 목표액</div><div class="mv" id="m-remain">—</div><div class="ms" style="color:var(--muted);">달성 필요</div></div>
+      <div class="metric"><div class="ml">일 평균 필요액</div><div class="mv" id="m-dneed">—</div><div class="ms" style="color:var(--muted);">잔여일 기준</div></div>
+    </div>
+    <div class="card" style="padding:13px 16px;">
+      <div class="prog-header"><span style="color:var(--muted);font-size:13px;">달성률</span><span class="big-rate" id="m-plabel">0%</span></div>
+      <div class="prog-wrap"><div class="prog-bar" id="m-pbar" style="width:0%;background:var(--primary-mid);"></div></div>
+      <div class="prog-labels"><span>0%</span><span>목표 진도율 <strong id="m-ptlabel">—</strong></span><span>100%</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">수치 표</div>
+    <div class="card" style="overflow-x:auto;">
+      <table>
+        <thead><tr><th style="width:26%;">항목</th><th style="width:20%;">목표</th><th style="width:20%;">실적</th><th style="width:14%;">달성률</th><th style="width:20%;">상태</th></tr></thead>
+        <tbody id="m-tbody"><tr><td colspan="5" class="placeholder">목표를 입력하면 표가 채워집니다</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">관리자 액션 가이드</div>
+    <div id="m-guide"><div class="placeholder">목표를 입력하면 가이드가 생성됩니다.</div></div>
+  </div>
+</div>
+</div>
+
+<script>
+const SHEET_URL='https://script.google.com/macros/s/AKfycbxPsQnOpOM6ffx0hZo374yR8Jze1UiYKh51aNtnofHRpxJBedTHphzuyywGe5VcqihMgg/exec';
+let records=[];
+
+function switchTab(t){
+  const map={daily:0,record:1,monthly:2};
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===map[t]));
+  document.querySelectorAll('.page').forEach((el,i)=>el.classList.toggle('active',i===map[t]));
+  if(t==='record')loadRecords();
+  if(t==='monthly')monthlyCalc();
+}
+
+const now=new Date();
+const mSel=document.getElementById('m-month');
+for(let i=0;i<6;i++){
+  const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+  const o=document.createElement('option');
+  o.textContent=`${d.getFullYear()}년 ${d.getMonth()+1}월`;
+  mSel.appendChild(o);
+}
+document.getElementById('d-date').value=now.toISOString().split('T')[0];
+
+function fmt(n){return Math.round(n).toLocaleString('ko-KR')+'원';}
+function roundH(n){return Math.round(n/100)*100;}
+function fmtH(n){return roundH(n).toLocaleString('ko-KR')+'원';}
+function getDateStr(){
+  const v=document.getElementById('d-date').value;
+  if(!v)return '날짜 미입력';
+  const d=new Date(v);
+  const days=['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+function sb(r){
+  if(r>=100)return '<span class="badge bs">달성</span>';
+  if(r>=90)return '<span class="badge bw">근접</span>';
+  if(r>=70)return '<span class="badge bw">주의</span>';
+  return '<span class="badge bd">미달</span>';
+}
+
+function saveGoal(){
+  localStorage.setItem('hb_goal',document.getElementById('m-goal').value||'');
+  localStorage.setItem('hb_bizdays',document.getElementById('m-bizdays').value||'');
+}
+function loadGoal(){
+  const g=localStorage.getItem('hb_goal');
+  const b=localStorage.getItem('hb_bizdays');
+  if(g)document.getElementById('m-goal').value=g;
+  if(b)document.getElementById('m-bizdays').value=b;
+}
+
+function setSyncStatus(ok){
+  const el=document.getElementById('sync-status');
+  el.textContent=ok?'연결됨':'연결 오류';
+  el.className='sync-status '+(ok?'sync-ok':'sync-err');
+}
+
+function loadRecords(){
+  document.getElementById('r-tbody').innerHTML='<tr><td colspan="10" class="placeholder">데이터 불러오는 중...</td></tr>';
+  fetch(SHEET_URL)
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status==='ok'){
+        records=data.records.map(r=>({
+          date:r.date, daytype:r.daytype,
+          sales:parseInt(r.sales)||0,
+          deposit:parseInt(r.deposit)||0,
+          cash:parseInt(r.cash)||0,
+          event:parseInt(r.event)||0,
+          kinder:parseInt(r.kinder)||0,
+          coupon:parseInt(r.coupon)||0,
+          memo:r.memo||''
+        }));
+        records.sort((a,b)=>a.date.localeCompare(b.date));
+        setSyncStatus(true);
+        renderTable();
+        updateMonthlySummary();
+      }
+    })
+    .catch(()=>{
+      setSyncStatus(false);
+      document.getElementById('r-tbody').innerHTML='<tr><td colspan="10" class="placeholder">데이터 불러오기 실패. 새로고침을 눌러주세요.</td></tr>';
+    });
+}
+
+function addRecord(){
+  const sales=parseInt(document.getElementById('d-sales').value)||0;
+  if(!sales){alert('일 매출을 입력해주세요.');return;}
+  const date=document.getElementById('d-date').value||now.toISOString().split('T')[0];
+  const rec={
+    date, daytype:document.getElementById('d-daytype').value,
+    sales,
+    deposit:parseInt(document.getElementById('d-deposit').value)||0,
+    cash:parseInt(document.getElementById('d-cash').value)||0,
+    event:parseInt(document.getElementById('d-event').value)||0,
+    kinder:parseInt(document.getElementById('d-kinder').value)||0,
+    coupon:parseInt(document.getElementById('d-coupon').value)||0,
+    memo:document.getElementById('d-memo').value,
+  };
+  const btn=document.getElementById('save-btn');
+  const msg=document.getElementById('save-msg');
+  btn.disabled=true; btn.textContent='저장 중...'; msg.textContent='';
+  fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'save_record',record:rec})})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status==='ok'){
+        const idx=records.findIndex(r=>r.date===date);
+        if(idx>=0)records[idx]=rec; else records.push(rec);
+        records.sort((a,b)=>a.date.localeCompare(b.date));
+        msg.textContent='✓ 저장됨';
+        msg.style.color='var(--green)';
+        setSyncStatus(true);
+        updateMonthlySummary();
+      } else {
+        msg.textContent='저장 실패. 다시 시도해주세요.';
+        msg.style.color='var(--red)';
+      }
+    })
+    .catch(()=>{
+      msg.textContent='저장 실패. 인터넷 연결 확인해주세요.';
+      msg.style.color='var(--red)';
+      setSyncStatus(false);
+    })
+    .finally(()=>{
+      btn.disabled=false; btn.textContent='+ 구글 시트에 저장';
+      setTimeout(()=>msg.textContent='',3000);
+    });
+}
+
+function deleteRecord(date){
+  if(!confirm('이 기록을 삭제할까요?'))return;
+  fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'delete_record',date:date})})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status==='ok'){
+        records=records.filter(r=>r.date!==date);
+        renderTable(); updateMonthlySummary();
+      }
+    })
+    .catch(()=>alert('삭제 실패. 다시 시도해주세요.'));
+}
+
+function updateMonthlySummary(){
+  const totalSales=records.reduce((s,r)=>s+r.sales,0);
+  const goal=parseInt(document.getElementById('m-goal').value)||0;
+  const bizdays=parseInt(document.getElementById('m-bizdays').value)||0;
+  const elapsed=records.length;
+  if(totalSales>0&&goal>0){
+    const arate=Math.round(totalSales/goal*100);
+    const trate=bizdays>0&&elapsed>0?Math.round(elapsed/bizdays*100):0;
+    const gap=arate-trate;
+    const remain=Math.max(goal-totalSales,0);
+    const rc=gap>=0?'var(--green)':'var(--red)';
+    const rbc=gap>=0?'var(--green-mid)':gap>=-10?'var(--amber-mid)':'var(--red-mid)';
+    document.getElementById('d-monthly-summary').innerHTML=`
+      <div class="highlight-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;color:var(--primary);font-weight:500;">이번달 누적 매출</span>
+          <span style="font-size:20px;font-weight:700;color:var(--primary);">${fmt(totalSales)}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+          <span style="font-size:12px;color:var(--muted);">달성률</span>
+          <span style="font-size:17px;font-weight:700;color:${rc};">${arate}% ${gap!==0?'('+(gap>=0?'+':'')+gap+'%p)':''}</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.5);border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px;">
+          <div style="height:100%;border-radius:6px;background:${rbc};width:${Math.min(arate,100)}%;"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--muted);">잔여 목표</span>
+          <span style="font-size:13px;font-weight:500;color:var(--primary);">${fmt(remain)}</span>
+        </div>
+      </div>`;
+  }else{
+    document.getElementById('d-monthly-summary').innerHTML='<div class="placeholder">월 목표 관리 탭에서 목표를 먼저 설정해주세요.</div>';
+  }
+  monthlyCalc();
+}
+
+function renderTable(){
+  const goal=parseInt(document.getElementById('m-goal').value)||0;
+  const bizdays=parseInt(document.getElementById('m-bizdays').value)||0;
+  const dailyGoal=goal>0&&bizdays>0?Math.round(goal/bizdays):0;
+  const tbody=document.getElementById('r-tbody');
+  if(records.length===0){
+    tbody.innerHTML='<tr><td colspan="10" class="placeholder">저장된 기록이 없습니다.</td></tr>';
+    document.getElementById('r-summary').innerHTML='<div class="placeholder">일일 보고 탭에서 매출을 저장하면 표시됩니다.</div>';
+    return;
+  }
+  let totalSales=0,totalDeposit=0,totalCash=0,totalEvent=0,totalCoupon=0;
+  records.forEach(r=>{totalSales+=r.sales;totalDeposit+=r.deposit;totalCash+=r.cash;totalEvent+=r.event;totalCoupon+=r.coupon;});
+  const accumRate=goal>0?Math.round(totalSales/goal*100):0;
+  const rateColor=accumRate>=100?'var(--green)':accumRate>=70?'var(--amber)':'var(--red)';
+  const rateBarColor=accumRate>=100?'var(--green-mid)':accumRate>=70?'var(--amber-mid)':'var(--red-mid)';
+  document.getElementById('r-summary').innerHTML=`
+    <div class="g4" style="margin-bottom:10px;">
+      <div class="metric"><div class="ml">누적 매출</div><div class="mv">${fmt(totalSales)}</div></div>
+      <div class="metric"><div class="ml">누적 입금</div><div class="mv">${fmt(totalDeposit)}</div></div>
+      <div class="metric"><div class="ml">월 목표 달성률</div><div class="mv" style="color:${rateColor};">${goal>0?accumRate+'%':'—'}</div></div>
+      <div class="metric"><div class="ml">총 쿠폰</div><div class="mv">${totalCoupon}장</div></div>
+    </div>
+    ${goal>0?`<div class="card" style="padding:12px 16px;">
+      <div class="prog-header"><span style="color:var(--muted);font-size:12px;">월 목표 달성률</span><span style="font-weight:700;font-size:18px;color:${rateColor};">${accumRate}%</span></div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${Math.min(accumRate,100)}%;background:${rateBarColor};"></div></div>
+      <div class="prog-labels"><span>0%</span><span>목표 ${fmt(goal)}</span><span>100%</span></div>
+    </div>`:''}`;
+  let cumSales=0;
+  tbody.innerHTML=records.map(r=>{
+    cumSales+=r.sales;
+    const vsGoal=dailyGoal>0?Math.round(r.sales/dailyGoal*100):0;
+    const cumRate=goal>0?Math.round(cumSales/goal*100):0;
+    const vsColor=vsGoal>=100?'var(--green)':vsGoal>=80?'var(--amber)':'var(--red)';
+    const cumColor=cumRate>=100?'var(--green)':cumRate>=70?'var(--amber)':'var(--red)';
+    const d=new Date(r.date);
+    const days=['일','월','화','수','목','금','토'];
+    const dateStr=`${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
+    return `<tr>
+      <td style="font-weight:500;">${dateStr}</td>
+      <td><span style="font-size:10px;color:var(--muted);">${r.daytype==='주말/공휴일'?'주말':'평일'}</span></td>
+      <td style="font-weight:500;">${fmtH(r.sales)}</td>
+      <td>${r.deposit>0?fmtH(r.deposit):'—'}</td>
+      <td>${r.cash>0?fmtH(r.cash):'—'}</td>
+      <td>${r.event>0?fmtH(r.event):'—'}</td>
+      <td>${r.coupon>0?r.coupon+'장':'—'}</td>
+      <td><div style="font-weight:700;color:${vsColor};font-size:13px;">${dailyGoal>0?vsGoal+'%':'—'}</div>
+        ${dailyGoal>0?`<div class="mini-prog"><div class="mini-bar" style="width:${Math.min(vsGoal,100)}%;background:${vsColor};"></div></div>`:''}</td>
+      <td><div style="font-weight:700;color:${cumColor};font-size:13px;">${goal>0?cumRate+'%':'—'}</div>
+        ${goal>0?`<div class="mini-prog"><div class="mini-bar" style="width:${Math.min(cumRate,100)}%;background:${cumColor};"></div></div>`:''}</td>
+      <td><button class="del-btn" onclick="deleteRecord('${r.date}')">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function dailyCalc(){
+  const sales=parseInt(document.getElementById('d-sales').value)||0;
+  const deposit=parseInt(document.getElementById('d-deposit').value)||0;
+  const cash=parseInt(document.getElementById('d-cash').value)||0;
+  const event=parseInt(document.getElementById('d-event').value)||0;
+  const kinder=parseInt(document.getElementById('d-kinder').value)||0;
+  const coupon=parseInt(document.getElementById('d-coupon').value)||0;
+  const memo=document.getElementById('d-memo').value;
+  const staff=document.getElementById('d-staff').value||'___';
+  const daytype=document.getElementById('d-daytype').value;
+  document.getElementById('ds-sales').textContent=fmt(sales);
+  document.getElementById('ds-deposit').textContent=fmt(deposit);
+  document.getElementById('ds-coupon').textContent=coupon+'장';
+  document.getElementById('ds-eratio').textContent=sales>0?Math.round(event/sales*100)+'%':'0%';
+  if(sales===0){document.getElementById('d-msg').textContent='숫자를 입력하면 메시지가 자동 생성됩니다.';return;}
+  const prevTotal=records.reduce((s,r)=>s+r.sales,0);
+  const todayAccum=prevTotal+sales;
+  const goal=parseInt(document.getElementById('m-goal').value)||0;
+  let msg=`[헬로방방 부천점] 일일 매출 보고\n━━━━━━━━━━━━━━\n📅 ${getDateStr()} (${daytype})\n\n💰 매출 현황\n`;
+  msg+=`• 일 매출: ${fmt(sales)}\n`;
+  msg+=`• 입금 금액: ${deposit>0?fmt(deposit):'미입력'}\n`;
+  msg+=`• 실현금: ${cash>0?fmt(cash):'미입력'}\n`;
+  if(event>0)msg+=`• 이벤트 매출: ${fmt(event)}\n`;
+  if(kinder>0)msg+=`• 어린이집 매출: ${fmt(kinder)}\n`;
+  if(coupon>0)msg+=`• 쿠폰 사용: ${coupon}장\n`;
+  msg+=`━━━━━━━━━━━━━━\n📊 누적 매출: ${fmt(todayAccum)}\n`;
+  if(goal>0)msg+=`🎯 월 목표 달성률: ${Math.round(todayAccum/goal*100)}%\n`;
+  if(memo)msg+=`\n📝 특이사항: ${memo}\n`;
+  msg+=`\n보고자: ${staff}`;
+  document.getElementById('d-msg').textContent=msg;
+}
+
+function monthlyCalc(){
+  const goal=parseInt(document.getElementById('m-goal').value)||0;
+  const biz=parseInt(document.getElementById('m-bizdays').value)||0;
+  const actual=records.reduce((s,r)=>s+r.sales,0);
+  const elapsed=records.length;
+  if(!goal||!biz){
+    document.getElementById('m-guide').innerHTML='<div class="alert aw"><div style="color:var(--amber);font-weight:700;flex-shrink:0;">▲</div><div><div style="font-weight:700;color:var(--amber);margin-bottom:2px;">입력 필요</div><div style="font-size:12px;">월 목표 매출과 영업일 수를 입력해주세요.</div></div></div>';
+    return;
+  }
+  const remaining=Math.max(biz-elapsed,0);
+  const trate=elapsed>0?Math.round(elapsed/biz*100):0;
+  const arate=actual>0?Math.round(actual/goal*100):0;
+  const gap=arate-trate;
+  const remainAmt=Math.max(goal-actual,0);
+  const dneed=remaining>0?remainAmt/remaining:0;
+  const dactual=elapsed>0?actual/elapsed:0;
+  document.getElementById('m-trate').textContent=elapsed>0?trate+'%':'—';
+  document.getElementById('m-arate').textContent=actual>0?arate+'%':'—';
+  document.getElementById('m-remain').textContent=actual>0?fmt(remainAmt):'—';
+  document.getElementById('m-dneed').textContent=remaining>0?fmt(Math.round(dneed))+'／일':'—';
+  const gapEl=document.getElementById('m-gap');
+  if(actual>0){
+    if(gap>=0){gapEl.textContent='+'+gap+'%p 앞서는 중';gapEl.style.color='var(--green)';}
+    else{gapEl.textContent=gap+'%p 뒤처진 중';gapEl.style.color='var(--red)';}
+  }else{gapEl.textContent='기록 없음';gapEl.style.color='var(--muted)';}
+  document.getElementById('m-pbar').style.width=actual>0?Math.min(arate,100)+'%':'0%';
+  document.getElementById('m-pbar').style.background=gap>=0?'var(--green-mid)':gap>=-10?'var(--amber-mid)':'var(--red-mid)';
+  document.getElementById('m-plabel').textContent=actual>0?arate+'%':'0%';
+  document.getElementById('m-ptlabel').textContent=elapsed>0?trate+'%':'—';
+  const rows=[
+    ['총 매출',fmt(goal),actual>0?fmt(actual):'—',actual>0?arate+'%':'—',actual>0?sb(arate):''],
+    ['일평균 목표',fmt(Math.round(goal/biz))+'／일','—','—',''],
+    ['일평균 실적','—',actual>0?fmt(Math.round(dactual))+'／일':'—','—',''],
+    ['일평균 필요액','—',remaining>0?fmt(Math.round(dneed))+'／일':'—','—',''],
+    ['잔여 필요액','—',actual>0?fmt(remainAmt):'—','—',remaining>0?remaining+'일 남음':'—'],
+  ];
+  document.getElementById('m-tbody').innerHTML=rows.map(r=>`<tr>${r.map((c,i)=>`<td${i===0?' style="font-weight:500;color:var(--muted);"':''}>${c}</td>`).join('')}</tr>`).join('');
+  const gs=[];
+  function ag(t,title,body){gs.push({t,title,body});}
+  if(actual===0){ag('w','기록 없음','일일 보고 탭에서 매출을 입력하고 저장하면 자동으로 반영됩니다.');}
+  else if(arate>=100){ag('s','목표 달성!','이번 달 목표를 달성했습니다. 다음 달 목표 상향을 검토하세요.');}
+  else if(gap<=-20){
+    ag('d','긴급 — 대폭 뒤처진 상태',`진도율이 목표보다 ${Math.abs(gap)}%p 낮습니다. 즉각적인 매출 부양이 필요합니다.`);
+    ag('d','주말 집중 공략 필요','잔여 주말을 활용해 인스타·카카오 주말 이벤트를 즉시 집행하세요.');
+    ag('w','평일 — 어린이집·단체 유치','어린이집 단체 방문 및 생일파티 패키지 단기 할인을 평일에 집중 운영하세요.');
+  }else if(gap<=-10){
+    ag('w','주의 — 진도율 뒤처짐',`목표 대비 ${Math.abs(gap)}%p 부족합니다. 이번 주 안에 만회 전략을 실행하세요.`);
+    ag('w','주말 이벤트 강화 권장','SNS 이벤트·쿠폰으로 주말 방문객을 늘리세요.');
+    ag('w','어린이집 매출 점검','어린이집 계약 입금 확인 및 추가 계약 기관을 발굴하세요.');
+  }else if(gap<0){
+    ag('w','소폭 뒤처짐',`목표 대비 ${Math.abs(gap)}%p 부족하지만 만회 가능 범위입니다. 일평균 ${fmt(Math.round(dneed))}을 유지하세요.`);
+  }else{ag('s','순항 중',`목표 진도율을 ${gap}%p 앞서고 있습니다. 현재 페이스를 유지하세요.`);}
+  if(remaining<=5&&actual>0&&arate<90)ag('d',`마감 ${remaining}일 전 — 마지막 스퍼트`,'카카오 채널 긴급 프로모션, 쿠폰 발송으로 잔여 목표를 채우세요.');
+  const cfg={
+    d:{cls:'ad',ic:'!',bg:'var(--red-mid)',tc:'var(--red)'},
+    w:{cls:'aw',ic:'▲',bg:'var(--amber-mid)',tc:'var(--amber)'},
+    s:{cls:'as',ic:'✓',bg:'var(--green-mid)',tc:'var(--green)'}
+  };
+  document.getElementById('m-guide').innerHTML=gs.map(g=>`
+    <div class="alert ${cfg[g.t].cls}">
+      <div style="width:20px;height:20px;border-radius:50%;background:${cfg[g.t].bg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${cfg[g.t].ic}</div>
+      <div><div style="font-weight:700;color:${cfg[g.t].tc};margin-bottom:2px;">${g.title}</div><div style="font-size:12px;">${g.body}</div></div>
+    </div>`).join('');
+}
+
+function copyMsg(){
+  const text=document.getElementById('d-msg').textContent;
+  if(text.includes('숫자를 입력'))return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    btn.textContent='복사 완료!';
+    setTimeout(()=>btn.textContent='메시지 복사하기',2000);
+  });
+}
+
+loadGoal();
+loadRecords();
+</script>
+</body>
+</html>
