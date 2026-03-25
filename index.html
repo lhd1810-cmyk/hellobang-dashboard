@@ -129,6 +129,10 @@ tr:last-child td{border-bottom:none;}
         <div class="field"><label>어린이집 매출 (원)</label><input type="number" id="d-kinder" placeholder="0" inputmode="numeric" oninput="dailyCalc()"/></div>
       </div>
       <div class="divider"></div>
+      <div class="g2" style="margin-bottom:10px;">
+        <div class="field"><label>시재오차 기준 (원)</label><input type="number" id="d-diff-base" value="80000" inputmode="numeric" oninput="dailyCalc()"/></div>
+        <div class="field"><label>실제 시재 (원)</label><input type="number" id="d-diff-actual" placeholder="0" inputmode="numeric" oninput="dailyCalc()"/></div>
+      </div>
       <div class="field"><label>특이사항</label><input type="text" id="d-memo" placeholder="예: 단체방문, 우천"/></div>
     </div>
     <div class="save-row">
@@ -143,6 +147,7 @@ tr:last-child td{border-bottom:none;}
       <div class="metric"><div class="ml">일 매출</div><div class="mv" id="ds-sales">0원</div></div>
       <div class="metric"><div class="ml">입금 금액</div><div class="mv" id="ds-deposit">0원</div></div>
       <div class="metric"><div class="ml">이벤트 비중</div><div class="mv" id="ds-eratio">0%</div></div>
+      <div class="metric"><div class="ml">시재오차</div><div class="mv" id="ds-diff">—</div><div class="ms" id="ds-diff-sub" style="font-size:11px;"></div></div>
     </div>
   </div>
 
@@ -459,6 +464,18 @@ function dailyCalc(){
   document.getElementById('ds-sales').textContent=fmt(sales);
   document.getElementById('ds-deposit').textContent=fmt(deposit);
   document.getElementById('ds-eratio').textContent=sales>0?Math.round(event/sales*100)+'%':'0%';
+  const diffBase=parseInt(document.getElementById('d-diff-base').value)||0;
+  const diffActual=parseInt(document.getElementById('d-diff-actual').value)||0;
+  if(diffActual>0){
+    const diff=diffActual-diffBase;
+    document.getElementById('ds-diff').textContent=(diff>=0?'+':'')+diff.toLocaleString('ko-KR')+'원';
+    document.getElementById('ds-diff').style.color=diff>=0?'var(--green)':'var(--red)';
+    document.getElementById('ds-diff-sub').textContent=diff>=0?'초과':'부족';
+    document.getElementById('ds-diff-sub').style.color=diff>=0?'var(--green)':'var(--red)';
+  }else{
+    document.getElementById('ds-diff').textContent='—';
+    document.getElementById('ds-diff-sub').textContent='';
+  }
   if(sales===0){document.getElementById('d-msg').textContent='숫자를 입력하면 메시지가 자동 생성됩니다.';return;}
   const prevTotal=records.reduce((s,r)=>s+r.sales,0);
   const todayAccum=prevTotal+sales;
@@ -471,6 +488,12 @@ function dailyCalc(){
   if(kinder>0)msg+=`• 어린이집 매출: ${fmt(kinder)}\n`;
   msg+=`━━━━━━━━━━━━━━\n📊 누적 매출: ${fmt(todayAccum)}\n`;
   if(goal>0)msg+=`🎯 월 목표 달성률: ${Math.round(todayAccum/goal*100)}%\n`;
+  const diffBaseVal=parseInt(document.getElementById('d-diff-base').value)||0;
+  const diffActualVal=parseInt(document.getElementById('d-diff-actual').value)||0;
+  if(diffActualVal>0){
+    const diff=diffActualVal-diffBaseVal;
+    msg+=`• 시재오차: ${(diff>=0?'+':'')+diff.toLocaleString('ko-KR')}원 (기준 ${diffBaseVal.toLocaleString('ko-KR')}원 → 실제 ${diffActualVal.toLocaleString('ko-KR')}원)\n`;
+  }
   if(memo)msg+=`\n📝 특이사항: ${memo}\n`;
   msg+=`\n보고자: ${staff}`;
   document.getElementById('d-msg').textContent=msg;
